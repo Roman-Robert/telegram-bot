@@ -9,8 +9,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
+import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -28,8 +30,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Autowired
     private UserRepository userRepository;
     final BotConfig config;
-    private final long OWNER_ID = 167433450; //Рома
-    private final long ADMIN_ID = 264128213; //Маша
+    private final long OWNER_ID = 167433450;
+    private final long ADMIN_ID = 264128213;
 
     static final String INFO_MESSAGE = EmojiParser.parseToUnicode(
             "This bot was created to help learning " +
@@ -77,19 +79,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-            /*if (messageText.contains("/send") &&
-                    (update.getMessage().getChatId() == 167433450 ||
-                    update.getMessage().getChatId() == 264128213)) {
-
-                String textToSendForAll = EmojiParser.parseToUnicode(messageText.substring(messageText.indexOf(" ")));
-                var users = userRepository.findAll();
-
-                for (User user : users) {
-                    sendMessage(user.getChatID(), textToSendForAll);
-                }
-                messageText = "/send";
-                log.info(String.format("%d sent message to all", chatId));
-            }*/
 
             if (messageText.contains("/send")) {
                 sendMessageToAllSubscribers(chatId, messageText);
@@ -105,16 +94,19 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/unsubscribe":
                     unSubscribeUser(update.getMessage());
                     break;
-                //убрать кейс отправки из меню(иначе его видно всем)
-                //case "/send":
-                //    sendMessageToAllSubscribers(chatId, messageText);
-                //    break;
                 case "/info":
                     sendMessage(chatId, INFO_MESSAGE);
                     break;
                 default:
                     sendMessage(chatId, "Sorry, this command wasn't recognized" + "\uD83E\uDEE4");
             }
+
+        } else if (update.hasMessage() && update.getMessage().hasDocument()) {
+
+            String fileId = update.getMessage().getDocument().getFileId();
+            long chatId = update.getMessage().getChatId();
+
+            sendDocumentToAllSubscribers(chatId, fileId);
 
         } else {
             log.error("Empty message was received");
@@ -174,19 +166,52 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-   private void sendMessageToAllSubscribers(long chatId, String message) {
+    private void sendMessageToAllSubscribers(long chatId, String message) {
 
-            if (chatId == OWNER_ID || chatId == ADMIN_ID) {
+        if (chatId == OWNER_ID || chatId == ADMIN_ID) {
 
-                String textToSendForAll = EmojiParser.parseToUnicode(message.substring(message.indexOf(" ")));
-                Iterable<User> users = userRepository.findAll();
+            String textToSendForAll = EmojiParser.parseToUnicode(message.substring(message.indexOf(" ")));
+            Iterable<User> users = userRepository.findAll();
 
-                for (User user : users) {
-                    sendMessage(user.getChatID(), textToSendForAll);
-                }
-                log.info(String.format("%d sent message to all", chatId));
-            } else {
-                sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+            for (User user : users) {
+                sendMessage(user.getChatID(), textToSendForAll);
             }
+            log.info(String.format("%d sent message to all", chatId));
+        } else {
+            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+        }
     }
+
+    private void sendDocument(long chatId, String fileId) {
+
+        SendDocument sendDocument = new SendDocument();
+        sendDocument.setChatId(chatId);
+        InputFile inputFile = new InputFile(fileId);
+        sendDocument.setDocument(inputFile);
+
+        try {
+            execute(sendDocument);
+            log.info(chatId + " sent file");
+        } catch (TelegramApiException e) {
+            log.error("Error in method .sendDocument()" + e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
+    private void sendDocumentToAllSubscribers(long chatId, String fileId) {
+
+        if (chatId == OWNER_ID || chatId == ADMIN_ID) {
+
+            Iterable<User> users = userRepository.findAll();
+
+            for (User user : users) {
+                sendDocument(user.getChatID(), fileId);
+            }
+
+            log.info(String.format("%d sent message to all", chatId));
+        } else {
+            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+        }
+    }
+
 }

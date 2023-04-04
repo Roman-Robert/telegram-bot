@@ -6,6 +6,7 @@ This bot allows all users of the telegram application to subscribe to the distri
 
 Sending messages can be done by the developer and the administrator of the school by sending a message to the chat bot. After that, the bot will send this message to all subscribed users.
 When subscribing, the chat collects the following information about the user:
+
 	- Name
 	- Surname
 	- Username (in the telegram application)

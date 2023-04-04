@@ -11,6 +11,7 @@ import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
+import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
@@ -22,13 +23,14 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Slf4j
 @Component
 public class TelegramBot extends TelegramLongPollingBot {
 
     @Autowired
-    private UserRepository userRepository;
+    private final UserRepository userRepository;
     final BotConfig config;
     private final long OWNER_ID = 167433450;
     private final long ADMIN_ID = 264128213;
@@ -52,6 +54,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/subscribe", "subscribe to receive content"));
         listOfCommands.add(new BotCommand("/unsubscribe", "cancel subscription"));
         listOfCommands.add(new BotCommand("/send", "send message to all"));
+/*
+        listOfCommands.add(new BotCommand("/test", "find out your level of English"));
+*/
         listOfCommands.add(new BotCommand("/info", "info how to use this bot"));
 
         try {
@@ -73,16 +78,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     @Override
     public void onUpdateReceived(Update update) {
-
         if (update.hasMessage() && update.getMessage().hasText()) {
 
             String messageText = update.getMessage().getText();
             long chatId = update.getMessage().getChatId();
 
-
-            if (messageText.contains("/send")) {
-                sendMessageToAllSubscribers(chatId, messageText);
-            }
 
             switch (messageText) {
                 case "/start":
@@ -100,13 +100,31 @@ public class TelegramBot extends TelegramLongPollingBot {
                 default:
                     sendMessage(chatId, "Sorry, this command wasn't recognized" + "\uD83E\uDEE4");
             }
+//Sending MESSAGE
+            if (messageText.contains("/send")) {
+                sendMessageToAllSubscribers(chatId, messageText);
+            }
 
+//Sending DOCUMENT
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
 
             String fileId = update.getMessage().getDocument().getFileId();
             long chatId = update.getMessage().getChatId();
 
             sendDocumentToAllSubscribers(chatId, fileId);
+
+//Sending PHOTO
+        } else if (update.hasMessage() && update.getMessage().hasPhoto()) {
+
+            long chatId = update.getMessage().getChatId();
+            String caption = update.getMessage().getCaption();
+            var photos = update.getMessage().getPhoto();
+            String photoId = Objects.requireNonNull(photos.stream()
+                            .findFirst()
+                            .orElse(null))
+                            .getFileId();
+
+            sendPhotoToAllSubscribers(chatId, photoId, caption);
 
         } else {
             log.error("Empty message was received");
@@ -153,6 +171,10 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+
+
+
+
     private void sendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -167,7 +189,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendMessageToAllSubscribers(long chatId, String message) {
-
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
 
             String textToSendForAll = EmojiParser.parseToUnicode(message.substring(message.indexOf(" ")));
@@ -182,8 +203,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendDocument(long chatId, String fileId) {
 
+
+
+
+    private void sendDocument(long chatId, String fileId) {
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);
         InputFile inputFile = new InputFile(fileId);
@@ -199,7 +223,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void sendDocumentToAllSubscribers(long chatId, String fileId) {
-
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
 
             Iterable<User> users = userRepository.findAll();
@@ -208,10 +231,47 @@ public class TelegramBot extends TelegramLongPollingBot {
                 sendDocument(user.getChatID(), fileId);
             }
 
-            log.info(String.format("%d sent message to all", chatId));
+            log.info(String.format("%d sent file to all", chatId));
+
         } else {
             sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
         }
     }
 
+
+
+
+
+    private void sendPhoto(long chatId, String photoId, String caption) {
+        InputFile inputFile = new InputFile(photoId);
+        SendPhoto sendPhoto = new SendPhoto();
+
+        sendPhoto.setChatId(chatId);
+        sendPhoto.setPhoto(inputFile);
+        sendPhoto.setCaption(caption);
+
+        try {
+            execute(sendPhoto);
+            log.info(chatId + " sent photo");
+        } catch (TelegramApiException e) {
+            log.error("Error in method .sendPhoto()" + e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
+    private void sendPhotoToAllSubscribers(long chatId, String photoId, String caption) {
+        if (chatId == OWNER_ID || chatId == ADMIN_ID) {
+
+            Iterable<User> users = userRepository.findAll();
+
+            for (User user : users) {
+                sendPhoto(user.getChatID(), photoId, caption);
+            }
+
+            log.info(String.format("%d sent photo to all subscribers", chatId));
+
+        } else {
+            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+        }
+    }
 }

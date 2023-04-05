@@ -14,10 +14,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.Chat;
-import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.api.objects.*;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -83,6 +80,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
+
         if (update.hasMessage() && update.getMessage().hasText()) {
 
             String messageText = update.getMessage().getText();
@@ -123,20 +121,18 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 //Sending PHOTO
         } else if (update.hasMessage() && update.getMessage().hasPhoto()) {
-
             long chatId = update.getMessage().getChatId();
             String caption = update.getMessage().getCaption();
             var photos = update.getMessage().getPhoto();
             String photoId = Objects.requireNonNull(photos.stream()
                             .findFirst()
                             .orElse(null))
-                    .getFileId();
+                            .getFileId();
 
             sendPhotoToAllSubscribers(chatId, photoId, caption);
 
 //Check message for call back query(for test answers)
         } else if (update.hasCallbackQuery()) {
-
             String callBackData = update.getCallbackQuery().getData();
             int messageID = update.getCallbackQuery().getMessage().getMessageId();
             long chatID = update.getCallbackQuery().getMessage().getChatId();
@@ -167,26 +163,34 @@ public class TelegramBot extends TelegramLongPollingBot {
                 execute(message);
 
 
-                //задать вопрос 1
-                testStart(chatID, message, TestEnglishLevel.QUESTION_ONE, TestEnglishLevel.ANSWER_ONE_1, TestEnglishLevel.ANSWER_ONE_2,
-                        TestEnglishLevel.ANSWER_ONE_3, TestEnglishLevel.ANSWER_ONE_4);
+                //Ask question 1
+                testStart(chatID, message, TestEnglishLevel.QUESTION_ONE,
+                        TestEnglishLevel.ANSWER_ONE_1,
+                        TestEnglishLevel.ANSWER_ONE_2,
+                        TestEnglishLevel.ANSWER_ONE_3,
+                        TestEnglishLevel.ANSWER_ONE_4);
+
                 Thread.sleep(10_000);
 
-                personalResults.add(update.getCallbackQuery().getData());
+                //Ask question 2
+                testStart(chatID, message, TestEnglishLevel.QUESTION_TWO,
+                        TestEnglishLevel.ANSWER_TWO_1,
+                        TestEnglishLevel.ANSWER_TWO_2,
+                        TestEnglishLevel.ANSWER_TWO_3,
+                        TestEnglishLevel.ANSWER_TWO_4);
 
-                //задать вопрос 2
-                testStart(chatID, message, TestEnglishLevel.QUESTION_TWO, TestEnglishLevel.ANSWER_TWO_1, TestEnglishLevel.ANSWER_TWO_2,
-                        TestEnglishLevel.ANSWER_TWO_3, TestEnglishLevel.ANSWER_TWO_4);
                 Thread.sleep(10_000);
-                personalResults.add(update.getCallbackQuery().getData());
 
-                //задать вопрос 3
-                testStart(chatID, message, TestEnglishLevel.QUESTION_THREE, TestEnglishLevel.ANSWER_THREE_1, TestEnglishLevel.ANSWER_THREE_2,
-                        TestEnglishLevel.ANSWER_THREE_3, TestEnglishLevel.ANSWER_THREE_4);
+                //Ask question 3
+                testStart(chatID, message, TestEnglishLevel.QUESTION_THREE,
+                        TestEnglishLevel.ANSWER_THREE_1,
+                        TestEnglishLevel.ANSWER_THREE_2,
+                        TestEnglishLevel.ANSWER_THREE_3,
+                        TestEnglishLevel.ANSWER_THREE_4);
+
                 Thread.sleep(10_000);
-                personalResults.add(update.getCallbackQuery().getData());
 
-                //получаем результат теста
+                //take a result of the test
                 testEnd(chatID, messageID);
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
@@ -201,7 +205,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                     log.error("Error in method .sendMessage()" + e.getMessage());
                     throw new RuntimeException();
                 }
-
             }
 
         } else {
@@ -372,10 +375,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            log.error("Error in method .testEnglishLevelQuestion()" + e.getMessage());
             throw new RuntimeException();
         }
-
     }
 
     private void testStart(long chatID, EditMessageText message, String question, String ans1, String ans2, String ans3, String ans4) {
@@ -415,22 +417,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            log.error("Error in method .testStart()" + e.getMessage());
             throw new RuntimeException();
         }
     }
 
     private void testEnd(long chatID, int messageID) {
-        //перечень правильных ответов
+        //list of correct answers
         List<String> correctAnswers = new ArrayList<>();
 
         correctAnswers.add(TestEnglishLevel.ANSWER_ONE_3);
         correctAnswers.add(TestEnglishLevel.ANSWER_TWO_4);
         correctAnswers.add(TestEnglishLevel.ANSWER_THREE_4);
 
-        for (String str:personalResults) {
+        for (String str : personalResults) {
             if (correctAnswers.contains(str)) testResult++;
-            System.out.println(str); //проверяем что записывается в лист
+            System.out.println(str); //only for check what we add to list
         }
 
         EditMessageText message = new EditMessageText();

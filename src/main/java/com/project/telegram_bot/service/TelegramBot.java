@@ -4,6 +4,7 @@ import com.project.telegram_bot.config.BotConfig;
 import com.project.telegram_bot.model.User;
 import com.project.telegram_bot.model.UserRepository;
 import com.vdurmont.emoji.EmojiParser;
+import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -12,12 +13,15 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
+import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
 import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
+import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.sql.Timestamp;
@@ -34,6 +38,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     final BotConfig config;
     private final long OWNER_ID = 167433450;
     private final long ADMIN_ID = 264128213;
+    int testResult = 0;
+    List<String> personalResults = new ArrayList<>();
 
     static final String INFO_MESSAGE = EmojiParser.parseToUnicode(
             "This bot was created to help learning " +
@@ -54,9 +60,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/subscribe", "subscribe to receive content"));
         listOfCommands.add(new BotCommand("/unsubscribe", "cancel subscription"));
         listOfCommands.add(new BotCommand("/send", "send message to all"));
-/*
-        listOfCommands.add(new BotCommand("/test", "find out your level of English"));
-*/
+        //listOfCommands.add(new BotCommand("/test", "find out your level of English"));
         listOfCommands.add(new BotCommand("/info", "info how to use this bot"));
 
         try {
@@ -76,6 +80,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         return config.getBotToken();
     }
 
+    @SneakyThrows
     @Override
     public void onUpdateReceived(Update update) {
         if (update.hasMessage() && update.getMessage().hasText()) {
@@ -93,6 +98,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/unsubscribe":
                     unSubscribeUser(update.getMessage());
+                    break;
+                case "/test":
+                    testEnglishLevelQuestion(update.getMessage().getChatId());
                     break;
                 case "/info":
                     sendMessage(chatId, INFO_MESSAGE);
@@ -122,9 +130,79 @@ public class TelegramBot extends TelegramLongPollingBot {
             String photoId = Objects.requireNonNull(photos.stream()
                             .findFirst()
                             .orElse(null))
-                            .getFileId();
+                    .getFileId();
 
             sendPhotoToAllSubscribers(chatId, photoId, caption);
+
+//Check message for call back query(for test answers)
+        } else if (update.hasCallbackQuery()) {
+
+            String callBackData = update.getCallbackQuery().getData();
+            int messageID = update.getCallbackQuery().getMessage().getMessageId();
+            long chatID = update.getCallbackQuery().getMessage().getChatId();
+
+            EditMessageText message = new EditMessageText();
+            message.setChatId(chatID);
+            message.setMessageId(messageID);
+
+            if (callBackData.equals(TestEnglishLevel.YES_BUTTON)) {
+
+                message.setText("Perfect! Let's go!");
+                execute(message);
+
+                Thread.sleep(1500);
+                message.setText("3");
+                execute(message);
+
+                Thread.sleep(1500);
+                message.setText("2");
+                execute(message);
+
+                Thread.sleep(1500);
+                message.setText("1");
+                execute(message);
+
+                Thread.sleep(1500);
+                message.setText("GO!");
+                execute(message);
+
+
+                //задать вопрос 1
+                testStart(chatID, message, TestEnglishLevel.QUESTION_ONE, TestEnglishLevel.ANSWER_ONE_1, TestEnglishLevel.ANSWER_ONE_2,
+                        TestEnglishLevel.ANSWER_ONE_3, TestEnglishLevel.ANSWER_ONE_4);
+                Thread.sleep(10_000);
+
+                personalResults.add(update.getCallbackQuery().getData());
+
+                //задать вопрос 2
+                testStart(chatID, message, TestEnglishLevel.QUESTION_TWO, TestEnglishLevel.ANSWER_TWO_1, TestEnglishLevel.ANSWER_TWO_2,
+                        TestEnglishLevel.ANSWER_TWO_3, TestEnglishLevel.ANSWER_TWO_4);
+                Thread.sleep(10_000);
+                personalResults.add(update.getCallbackQuery().getData());
+
+                //задать вопрос 3
+                testStart(chatID, message, TestEnglishLevel.QUESTION_THREE, TestEnglishLevel.ANSWER_THREE_1, TestEnglishLevel.ANSWER_THREE_2,
+                        TestEnglishLevel.ANSWER_THREE_3, TestEnglishLevel.ANSWER_THREE_4);
+                Thread.sleep(10_000);
+                personalResults.add(update.getCallbackQuery().getData());
+
+                //получаем результат теста
+                testEnd(chatID, messageID);
+
+            } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
+                String text = "You have enough to prepare!";
+                message.setChatId(chatID);
+                message.setMessageId(messageID);
+                message.setText(text);
+
+                try {
+                    execute(message);
+                } catch (TelegramApiException e) {
+                    log.error("Error in method .sendMessage()" + e.getMessage());
+                    throw new RuntimeException();
+                }
+
+            }
 
         } else {
             log.error("Empty message was received");
@@ -172,9 +250,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
 
-
-
-
     private void sendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
         message.setChatId(String.valueOf(chatId));
@@ -202,9 +277,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
         }
     }
-
-
-
 
 
     private void sendDocument(long chatId, String fileId) {
@@ -239,9 +311,6 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
 
-
-
-
     private void sendPhoto(long chatId, String photoId, String caption) {
         InputFile inputFile = new InputFile(photoId);
         SendPhoto sendPhoto = new SendPhoto();
@@ -274,4 +343,107 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
         }
     }
+
+
+    //test English level knowledge
+    private void testEnglishLevelQuestion(long chatId) {
+
+        SendMessage message = new SendMessage();
+        message.setChatId(chatId);
+        message.setText("Are you ready?");
+
+        InlineKeyboardMarkup keyboardMarkup = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rowsList = new ArrayList<>();
+        List<InlineKeyboardButton> rowLine = new ArrayList<>();
+
+        var buttonYes = new InlineKeyboardButton("Yes!");
+        var buttonNo = new InlineKeyboardButton("No \uD83E\uDEE8");
+
+        buttonYes.setCallbackData(TestEnglishLevel.YES_BUTTON);
+        buttonNo.setCallbackData(TestEnglishLevel.NO_BUTTON);
+
+        rowLine.add(buttonNo);
+        rowLine.add(buttonYes);
+        rowsList.add(rowLine);
+
+        keyboardMarkup.setKeyboard(rowsList);
+        message.setReplyMarkup(keyboardMarkup);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            throw new RuntimeException();
+        }
+
+    }
+
+    private void testStart(long chatID, EditMessageText message, String question, String ans1, String ans2, String ans3, String ans4) {
+        InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
+        List<List<InlineKeyboardButton>> rows = new ArrayList<>();
+        List<InlineKeyboardButton> rowOne = new ArrayList<>();
+        List<InlineKeyboardButton> rowTwo = new ArrayList<>();
+        List<InlineKeyboardButton> rowThree = new ArrayList<>();
+        List<InlineKeyboardButton> rowFour = new ArrayList<>();
+
+        var buttonOne = new InlineKeyboardButton(ans1);
+        var buttonTwo = new InlineKeyboardButton(ans2);
+        var buttonThree = new InlineKeyboardButton(ans3);
+        var buttonFour = new InlineKeyboardButton(ans4);
+
+        buttonOne.setCallbackData(ans1);
+        buttonTwo.setCallbackData(ans2);
+        buttonThree.setCallbackData(ans3);
+        buttonFour.setCallbackData(ans4);
+
+        rowOne.add(buttonOne);
+        rowTwo.add(buttonTwo);
+        rowThree.add(buttonThree);
+        rowFour.add(buttonFour);
+
+        rows.add(rowOne);
+        rows.add(rowTwo);
+        rows.add(rowThree);
+        rows.add(rowFour);
+
+        keyboard.setKeyboard(rows);
+
+        message.setChatId(chatID);
+        message.setText(question);
+        message.setReplyMarkup(keyboard);
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
+    private void testEnd(long chatID, int messageID) {
+        //перечень правильных ответов
+        List<String> correctAnswers = new ArrayList<>();
+
+        correctAnswers.add(TestEnglishLevel.ANSWER_ONE_3);
+        correctAnswers.add(TestEnglishLevel.ANSWER_TWO_4);
+        correctAnswers.add(TestEnglishLevel.ANSWER_THREE_4);
+
+        for (String str:personalResults) {
+            if (correctAnswers.contains(str)) testResult++;
+            System.out.println(str); //проверяем что записывается в лист
+        }
+
+        EditMessageText message = new EditMessageText();
+        message.setChatId(chatID);
+        message.setMessageId(messageID);
+        message.setText("Congratulation! Your result is " + testResult + "/" + correctAnswers.size());
+
+        try {
+            execute(message);
+        } catch (TelegramApiException e) {
+            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
 }

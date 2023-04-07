@@ -36,15 +36,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     private final long OWNER_ID = 167433450;
     private final long ADMIN_ID = 264128213;
     int testResult = 0;
+    int questionNumber = 0;
     List<String> personalResults = new ArrayList<>();
 
-    static final String INFO_MESSAGE = EmojiParser.parseToUnicode(
-            "This bot was created to help learning " +
-                    "english language with online school Infinitive.\n\n" +
-                    "Website: infinitive-spb.ru\n\n" +
-                    //инстаграм ссыль заменить на профиль
-                    "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" +
-                    "Phone: +7(911)924-36-04");
+    static final String INFO_MESSAGE = EmojiParser.parseToUnicode("This bot was created to help learning " + "english language with online school Infinitive.\n\n" + "Website: infinitive-spb.ru\n\n" +
+            //инстаграм ссыль заменить на профиль
+            "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" + "Phone: +7(911)924-36-04");
 
     public TelegramBot(BotConfig config, UserRepository userRepository) {
         this.config = config;
@@ -57,7 +54,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/subscribe", "subscribe to receive content"));
         listOfCommands.add(new BotCommand("/unsubscribe", "cancel subscription"));
         listOfCommands.add(new BotCommand("/send", "send message to all"));
-        //listOfCommands.add(new BotCommand("/test", "find out your level of English"));
+        listOfCommands.add(new BotCommand("/test", "find out your level of English"));
         listOfCommands.add(new BotCommand("/info", "info how to use this bot"));
 
         try {
@@ -124,10 +121,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             long chatId = update.getMessage().getChatId();
             String caption = update.getMessage().getCaption();
             var photos = update.getMessage().getPhoto();
-            String photoId = Objects.requireNonNull(photos.stream()
-                            .findFirst()
-                            .orElse(null))
-                            .getFileId();
+            String photoId = Objects.requireNonNull(photos.stream().findFirst().orElse(null)).getFileId();
 
             sendPhotoToAllSubscribers(chatId, photoId, caption);
 
@@ -142,56 +136,30 @@ public class TelegramBot extends TelegramLongPollingBot {
             message.setMessageId(messageID);
 
             if (callBackData.equals(TestEnglishLevel.YES_BUTTON)) {
-
                 message.setText("Perfect! Let's go!");
                 execute(message);
 
-                Thread.sleep(1500);
+                Thread.sleep(1000);
                 message.setText("3");
                 execute(message);
 
-                Thread.sleep(1500);
+                Thread.sleep(1000);
                 message.setText("2");
                 execute(message);
 
-                Thread.sleep(1500);
+                Thread.sleep(1000);
                 message.setText("1");
                 execute(message);
 
-                Thread.sleep(1500);
+                Thread.sleep(1000);
                 message.setText("GO!");
                 execute(message);
 
+                //задаем первый вопрос
+                questionNumber = 1;
+                testStart(chatID, message, TestEnglishLevel.questionOne);
+                System.out.println("Задан " + questionNumber + " вопрос");
 
-                //Ask question 1
-                testStart(chatID, message, TestEnglishLevel.QUESTION_ONE,
-                        TestEnglishLevel.ANSWER_ONE_1,
-                        TestEnglishLevel.ANSWER_ONE_2,
-                        TestEnglishLevel.ANSWER_ONE_3,
-                        TestEnglishLevel.ANSWER_ONE_4);
-
-                Thread.sleep(10_000);
-
-                //Ask question 2
-                testStart(chatID, message, TestEnglishLevel.QUESTION_TWO,
-                        TestEnglishLevel.ANSWER_TWO_1,
-                        TestEnglishLevel.ANSWER_TWO_2,
-                        TestEnglishLevel.ANSWER_TWO_3,
-                        TestEnglishLevel.ANSWER_TWO_4);
-
-                Thread.sleep(10_000);
-
-                //Ask question 3
-                testStart(chatID, message, TestEnglishLevel.QUESTION_THREE,
-                        TestEnglishLevel.ANSWER_THREE_1,
-                        TestEnglishLevel.ANSWER_THREE_2,
-                        TestEnglishLevel.ANSWER_THREE_3,
-                        TestEnglishLevel.ANSWER_THREE_4);
-
-                Thread.sleep(10_000);
-
-                //take a result of the test
-                testEnd(chatID, messageID);
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
                 String text = "You have enough to prepare!";
@@ -199,11 +167,25 @@ public class TelegramBot extends TelegramLongPollingBot {
                 message.setMessageId(messageID);
                 message.setText(text);
 
-                try {
-                    execute(message);
-                } catch (TelegramApiException e) {
-                    log.error("Error in method .sendMessage()" + e.getMessage());
-                    throw new RuntimeException();
+                execute(message);
+
+            } else {
+                switch (questionNumber) {
+                    case 1:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.questionTwo);
+                        break;
+                    case 2:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.questionThree);
+                        break;
+                    case 3:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        //take a result of the test
+                        testEnd(chatID, messageID);
+                        break;
                 }
             }
 
@@ -380,7 +362,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void testStart(long chatID, EditMessageText message, String question, String ans1, String ans2, String ans3, String ans4) {
+    private void testStart(long chatID, EditMessageText message, List<String> question) {
         InlineKeyboardMarkup keyboard = new InlineKeyboardMarkup();
         List<List<InlineKeyboardButton>> rows = new ArrayList<>();
         List<InlineKeyboardButton> rowOne = new ArrayList<>();
@@ -388,15 +370,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         List<InlineKeyboardButton> rowThree = new ArrayList<>();
         List<InlineKeyboardButton> rowFour = new ArrayList<>();
 
-        var buttonOne = new InlineKeyboardButton(ans1);
-        var buttonTwo = new InlineKeyboardButton(ans2);
-        var buttonThree = new InlineKeyboardButton(ans3);
-        var buttonFour = new InlineKeyboardButton(ans4);
+        var buttonOne = new InlineKeyboardButton(question.get(1));
+        var buttonTwo = new InlineKeyboardButton(question.get(2));
+        var buttonThree = new InlineKeyboardButton(question.get(3));
+        var buttonFour = new InlineKeyboardButton(question.get(4));
 
-        buttonOne.setCallbackData(ans1);
-        buttonTwo.setCallbackData(ans2);
-        buttonThree.setCallbackData(ans3);
-        buttonFour.setCallbackData(ans4);
+        buttonOne.setCallbackData(question.get(1));
+        buttonTwo.setCallbackData(question.get(2));
+        buttonThree.setCallbackData(question.get(3));
+        buttonFour.setCallbackData(question.get(4));
 
         rowOne.add(buttonOne);
         rowTwo.add(buttonTwo);
@@ -411,7 +393,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         keyboard.setKeyboard(rows);
 
         message.setChatId(chatID);
-        message.setText(question);
+        message.setText(question.get(0));
         message.setReplyMarkup(keyboard);
 
         try {
@@ -423,27 +405,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void testEnd(long chatID, int messageID) {
-        //list of correct answers
-        List<String> correctAnswers = new ArrayList<>();
-
-        correctAnswers.add(TestEnglishLevel.ANSWER_ONE_3);
-        correctAnswers.add(TestEnglishLevel.ANSWER_TWO_4);
-        correctAnswers.add(TestEnglishLevel.ANSWER_THREE_4);
 
         for (String str : personalResults) {
-            if (correctAnswers.contains(str)) testResult++;
-            System.out.println(str); //only for check what we add to list
+            if (TestEnglishLevel.correctAnswersList.contains(str)) testResult++;
         }
 
         EditMessageText message = new EditMessageText();
         message.setChatId(chatID);
         message.setMessageId(messageID);
-        message.setText("Congratulation! Your result is " + testResult + "/" + correctAnswers.size());
+        message.setText("Congratulation! Your result is " + testResult + "/" + TestEnglishLevel.correctAnswersList.size() + "questions!");
 
         try {
             execute(message);
         } catch (TelegramApiException e) {
-            log.error("Error in method .testEnglishLevel()" + e.getMessage());
+            log.error("Error in method .testEnd()" + e.getMessage());
             throw new RuntimeException();
         }
     }

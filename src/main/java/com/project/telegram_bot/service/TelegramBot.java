@@ -53,7 +53,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/start", "welcome"));
         listOfCommands.add(new BotCommand("/subscribe", "subscribe to receive content"));
         listOfCommands.add(new BotCommand("/unsubscribe", "cancel subscription"));
-        listOfCommands.add(new BotCommand("/send", "send message to all"));
+        //listOfCommands.add(new BotCommand("/send", "send message to all"));  //Only owner and admin know about this function
         listOfCommands.add(new BotCommand("/test", "find out your level of English"));
         listOfCommands.add(new BotCommand("/info", "info how to use this bot"));
 
@@ -101,7 +101,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, INFO_MESSAGE);
                     break;
                 default:
-                    sendMessage(chatId, "Sorry, this command wasn't recognized" + "\uD83E\uDEE4");
+                    if (update.getMessage().getChatId() == OWNER_ID || update.getMessage().getChatId() == ADMIN_ID) {
+                        log.info("Owner or admin sent something");
+                    } else {
+                        sendMessage(chatId, "Sorry, this command wasn't recognized" + "\uD83E\uDEE4");
+                    }
             }
 //Sending MESSAGE
             if (messageText.contains("/send")) {
@@ -113,8 +117,9 @@ public class TelegramBot extends TelegramLongPollingBot {
 
             String fileId = update.getMessage().getDocument().getFileId();
             long chatId = update.getMessage().getChatId();
+            String caption = update.getMessage().getCaption();
 
-            sendDocumentToAllSubscribers(chatId, fileId);
+            sendDocumentToAllSubscribers(chatId, fileId, caption);
 
 //Sending PHOTO
         } else if (update.hasMessage() && update.getMessage().hasPhoto()) {
@@ -158,7 +163,6 @@ public class TelegramBot extends TelegramLongPollingBot {
                 //задаем первый вопрос
                 questionNumber = 1;
                 testStart(chatID, message, TestEnglishLevel.questionOne);
-                System.out.println("Задан " + questionNumber + " вопрос");
 
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
@@ -264,11 +268,12 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
 
-    private void sendDocument(long chatId, String fileId) {
+    private void sendDocument(long chatId, String fileId, String caption) {
         SendDocument sendDocument = new SendDocument();
         sendDocument.setChatId(chatId);
         InputFile inputFile = new InputFile(fileId);
         sendDocument.setDocument(inputFile);
+        sendDocument.setCaption(caption);
 
         try {
             execute(sendDocument);
@@ -279,13 +284,13 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
-    private void sendDocumentToAllSubscribers(long chatId, String fileId) {
+    private void sendDocumentToAllSubscribers(long chatId, String fileId, String caption) {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
 
             Iterable<User> users = userRepository.findAll();
 
             for (User user : users) {
-                sendDocument(user.getChatID(), fileId);
+                sendDocument(user.getChatID(), fileId, caption);
             }
 
             log.info(String.format("%d sent file to all", chatId));

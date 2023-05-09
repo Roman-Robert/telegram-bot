@@ -7,6 +7,7 @@ import com.vdurmont.emoji.EmojiParser;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
@@ -14,7 +15,10 @@ import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.*;
+import org.telegram.telegrambots.meta.api.objects.Chat;
+import org.telegram.telegrambots.meta.api.objects.InputFile;
+import org.telegram.telegrambots.meta.api.objects.Message;
+import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
 import org.telegram.telegrambots.meta.api.objects.commands.scope.BotCommandScopeDefault;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
@@ -33,15 +37,24 @@ public class TelegramBot extends TelegramLongPollingBot {
     @Autowired
     private final UserRepository userRepository;
     final BotConfig config;
-    private final long OWNER_ID = 167433450;
-    private final long ADMIN_ID = 264128213;
+    @Value("${owner_id}")
+    private long OWNER_ID;
+    @Value("${admin_id}")
+    private long ADMIN_ID;
     int testResult = 0;
     int questionNumber = 0;
     List<String> personalResults = new ArrayList<>();
 
-    static final String INFO_MESSAGE = EmojiParser.parseToUnicode("This bot was created to help learning " + "english language with online school Infinitive.\n\n" + "Website: infinitive-spb.ru\n\n" +
-            //инстаграм ссыль заменить на профиль
-            "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" + "Phone: +7(911)924-36-04");
+    static final String INFO_MESSAGE = EmojiParser.parseToUnicode("Бот умеет делать много классных штук, " +
+            "типа проверить твои знания в коротком тесте, записать тебя на тестовое занятие, напомнить тебе о " +
+            "важных событиях и даже иногда присылать полезную инфу для изучения языка. " +
+            "Ну что, заходи, не пожалеешь!\n" +
+            "P.s. или пожалеешь, но это не точно.\n" +
+            "В любом случае, попробовать стоит.\n\n" +
+            "VK: https://vk.com/infinitive_online\n\n" +
+            "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" +
+            "Phone: +7(981)9347260\n\n" +
+            "Whats App: https://wa.me/message/66F2CVQK7NLOK1");
 
     public TelegramBot(BotConfig config, UserRepository userRepository) {
         this.config = config;
@@ -50,12 +63,15 @@ public class TelegramBot extends TelegramLongPollingBot {
         //Меню чат-бота
         List<BotCommand> listOfCommands = new ArrayList<>();
 
-        listOfCommands.add(new BotCommand("/start", "welcome"));
-        listOfCommands.add(new BotCommand("/subscribe", "subscribe to receive content"));
-        listOfCommands.add(new BotCommand("/unsubscribe", "cancel subscription"));
-        //listOfCommands.add(new BotCommand("/send", "send message to all"));  //Only owner and admin know about this function
-        listOfCommands.add(new BotCommand("/test", "find out your level of English"));
-        listOfCommands.add(new BotCommand("/info", "info how to use this bot"));
+        listOfCommands.add(new BotCommand("/start", "начать работу с ботом"));
+        listOfCommands.add(new BotCommand("/subscribe", "подписаться"));
+        listOfCommands.add(new BotCommand("/unsubscribe", "отменить подписку"));
+        listOfCommands.add(new BotCommand("/test", "пройти тест"));
+        listOfCommands.add(new BotCommand("/info", "информация"));
+        //Only owner and admin know about this functions
+        //listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
+        //listOfCommands.add(new BotCommand("/users", "получить список подписчиков бота"));
+
 
         try {
             this.execute(new SetMyCommands(listOfCommands, new BotCommandScopeDefault(), null));
@@ -100,6 +116,8 @@ public class TelegramBot extends TelegramLongPollingBot {
                 case "/info":
                     sendMessage(chatId, INFO_MESSAGE);
                     break;
+                case "/users":
+                    getAllSubscribers(chatId);
                 default:
                     if (update.getMessage().getChatId() == OWNER_ID || update.getMessage().getChatId() == ADMIN_ID) {
                         log.info("Owner or admin sent something");
@@ -162,11 +180,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
                 //задаем первый вопрос
                 questionNumber = 1;
-                testStart(chatID, message, TestEnglishLevel.questionOne);
+                testStart(chatID, message, TestEnglishLevel.question1);
 
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
-                String text = "You have enough to prepare!";
+                String text = "You have enough time to prepare!";
                 message.setChatId(chatID);
                 message.setMessageId(messageID);
                 message.setText(text);
@@ -174,20 +192,56 @@ public class TelegramBot extends TelegramLongPollingBot {
                 execute(message);
 
             } else {
+
                 switch (questionNumber) {
                     case 1:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.questionTwo);
+                        testStart(chatID, message, TestEnglishLevel.question2);
                         break;
                     case 2:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.questionThree);
+                        testStart(chatID, message, TestEnglishLevel.question3);
                         break;
                     case 3:
                         personalResults.add(update.getCallbackQuery().getData());
-                        //take a result of the test
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question4);
+                        break;
+                    case 4:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question5);
+                        break;
+                    case 5:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question6);
+                        break;
+                    case 6:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question7);
+                        break;
+                    case 7:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question8);
+                        break;
+                    case 8:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question9);
+                        break;
+                    case 9:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
+                        testStart(chatID, message, TestEnglishLevel.question10);
+                        break;
+                    case 10:
+                        personalResults.add(update.getCallbackQuery().getData());
+                        questionNumber++;
                         testEnd(chatID, messageID);
                         break;
                 }
@@ -202,7 +256,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, String name) {
-        String answer = String.format("Hi, %s! Nice to meet you!", name);
+        String answer = String.format("Hi, %s! Nice to meet you!\n Подпишись на бота, чтобы получать полезную информацию.", name);
         sendMessage(chatId, answer);
         log.info(String.format("Replied to user %s", name));
     }
@@ -222,19 +276,19 @@ public class TelegramBot extends TelegramLongPollingBot {
             user.setLevel(0);
 
             userRepository.save(user);
-            sendMessage(chatId, "You subscribed successfully!");
+            sendMessage(chatId, "Подписка успешно оформлена!");
             log.info("User subscribed: " + user);
         } else {
-            sendMessage(message.getChatId(), "You are already subscribed");
+            sendMessage(message.getChatId(), "Вы уже подписаны на бота \uD83D\uDC4D");
         }
     }
 
     private void unSubscribeUser(Message message) {
         if (userRepository.findById(message.getChatId()).isPresent()) {
             userRepository.deleteById(message.getChatId());
-            sendMessage(message.getChatId(), "You have successfully unsubscribed");
+            sendMessage(message.getChatId(), "Вы отписались от рассылки.");
         } else {
-            sendMessage(message.getChatId(), "You have not been subscribed");
+            sendMessage(message.getChatId(), "Вы не были подписаны на бота");
         }
     }
 
@@ -263,7 +317,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
             log.info(String.format("%d sent message to all", chatId));
         } else {
-            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+            sendMessage(chatId, "Упс! Только админ может отправлять сообщения " + "\uD83D\uDE0E");
         }
     }
 
@@ -286,17 +340,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     private void sendDocumentToAllSubscribers(long chatId, String fileId, String caption) {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
-
             Iterable<User> users = userRepository.findAll();
-
             for (User user : users) {
                 sendDocument(user.getChatID(), fileId, caption);
             }
-
             log.info(String.format("%d sent file to all", chatId));
-
         } else {
-            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+            sendMessage(chatId, "Упс! Только админ может отправлять сообщения " + "\uD83D\uDE0E");
         }
     }
 
@@ -318,26 +368,37 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    private void sendPhotoByLink(long chatId, String url) {
+        InputFile inputFile = new InputFile(url);
+        SendPhoto sendPhoto = new SendPhoto();
+
+        sendPhoto.setChatId(chatId);
+        sendPhoto.setPhoto(inputFile);
+
+        try {
+            execute(sendPhoto);
+            log.info(chatId + " sent photo");
+        } catch (TelegramApiException e) {
+            log.error("Error in method .sendPhoto()" + e.getMessage());
+            throw new RuntimeException();
+        }
+    }
+
     private void sendPhotoToAllSubscribers(long chatId, String photoId, String caption) {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
-
             Iterable<User> users = userRepository.findAll();
-
             for (User user : users) {
                 sendPhoto(user.getChatID(), photoId, caption);
             }
-
             log.info(String.format("%d sent photo to all subscribers", chatId));
-
         } else {
-            sendMessage(chatId, "Sorry, only owner and admin can send messages" + "\uD83D\uDE0E");
+            sendMessage(chatId, "Упс! Только админ может отправлять сообщения " + "\uD83D\uDE0E");
         }
     }
 
 
     //test English level knowledge
     private void testEnglishLevelQuestion(long chatId) {
-
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
         message.setText("Are you ready?");
@@ -410,15 +471,27 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void testEnd(long chatID, int messageID) {
-
         for (String str : personalResults) {
             if (TestEnglishLevel.correctAnswersList.contains(str)) testResult++;
+        }
+
+        String resultMessage = "Ты правильно ответил на " + testResult +
+                " из " + TestEnglishLevel.correctAnswersList.size() + " вопросов!\n\n";
+
+        if (testResult < 4) {
+            resultMessage += "Нужно усерднее изучать английский язык.";
+        } else if (testResult < 8) {
+            resultMessage += "У тебя есть базовые знания английского языка, " +
+                    "но требуется дополнительное обучение.";
+        } else {
+            resultMessage += "Oтлично! У тебя хорошие знания английского языка, " +
+                    "но это не повод остонавливаться!";
         }
 
         EditMessageText message = new EditMessageText();
         message.setChatId(chatID);
         message.setMessageId(messageID);
-        message.setText("Congratulation! Your result is " + testResult + "/" + TestEnglishLevel.correctAnswersList.size() + "questions!");
+        message.setText(resultMessage);
 
         try {
             execute(message);
@@ -428,4 +501,26 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
     }
 
+    //метод отправляет всех подписчиков сообщением админу
+    private void getAllSubscribers(long chatId) {
+
+        Iterable<User> users = userRepository.findAll();
+        StringBuilder subscribersList = new StringBuilder("Список подписчиков бота:\n");
+        int i = 1;
+
+        for (User user : users) {
+            subscribersList
+                    .append(i)
+                    .append(" - ")
+                    .append(user.getFirstName())
+                    .append(" ")
+                    .append(user.getLastName())
+                    .append("\n");
+            i++;
+        }
+
+        if (chatId == OWNER_ID || chatId == ADMIN_ID) {
+            sendMessage(chatId, subscribersList.toString().replace("null", ""));
+        }
+    }
 }

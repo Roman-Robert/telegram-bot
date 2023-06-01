@@ -63,8 +63,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/lesson", "получить бесплатный урок"));
         listOfCommands.add(new BotCommand("/info", "информация"));
         //Only owner and admin know about this functions
-        listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
-        listOfCommands.add(new BotCommand("/users", "получить список подписчиков бота"));
+        //listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
+        //listOfCommands.add(new BotCommand("/users", "получить список подписчиков бота"));
 
 
         try {

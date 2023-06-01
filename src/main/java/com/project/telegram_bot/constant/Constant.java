@@ -15,5 +15,5 @@ public class Constant {
             "Phone: +7(981)9347260\n\n" +
             "Whats App: https://wa.me/message/66F2CVQK7NLOK1");
 
-    public static String ADMIN_ONLY;
+    public static String ADMIN_ONLY = "Упс! Только админ может отправлять сообщения";
 }

@@ -18,5 +18,6 @@ public class User {
     private Timestamp subscribedAt;
     private int level;
     private String isActive;
+    private int freeLesson;
 
 }

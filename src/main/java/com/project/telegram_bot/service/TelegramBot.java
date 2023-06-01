@@ -29,6 +29,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 @Slf4j
 @Component
@@ -278,6 +279,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             user.setLastName(chat.getLastName());
             user.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
             user.setLevel(0);
+            user.setIsActive("YES");
 
             userRepository.save(user);
             sendMessage(chatId, "Подписка успешно оформлена!");
@@ -288,8 +290,11 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void unSubscribeUser(Message message) {
-        if (userRepository.findById(message.getChatId()).isPresent()) {
-            userRepository.deleteById(message.getChatId());
+        Optional<User> user = userRepository.findById(message.getChatId());
+
+        if (user.isPresent() && user.get().getIsActive().equals("YES")) {
+            user.get().setIsActive("NO");
+            userRepository.save(user.get());
             sendMessage(message.getChatId(), "Вы отписались от рассылки.");
         } else {
             sendMessage(message.getChatId(), "Вы не были подписаны на бота");

@@ -16,4 +16,9 @@ public class Constant {
             "Whats App: https://wa.me/message/66F2CVQK7NLOK1");
 
     public static String ADMIN_ONLY = "Упс! Только админ может отправлять сообщения";
+
+    public static String WELCOME_MSG = "Hi, %s! Nice to meet you!\uD83D\uDC4B" +
+            "\nНажимай на кнопку Menu, чтобы узнать, что может бот." +
+            "\nПодпишись на бота, чтобы получать полезную информацию." +
+            "\nEnjoy your studies \uD83D\uDC9B\uD83D\uDC9A";
 }

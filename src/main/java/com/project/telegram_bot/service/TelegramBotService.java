@@ -119,7 +119,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     if (update.getMessage().getChatId() == OWNER_ID || update.getMessage().getChatId() == ADMIN_ID) {
                         log.info("Owner or admin sent something");
                     } else {
-                        sendMessage(chatId, "Sorry, this command wasn't recognized" + "\uD83E\uDEE4");
+                        sendMessage(chatId, "Sorry, this command wasn't recognized \uD83E\uDEE4");
                     }
             }
 //Sending MESSAGE
@@ -129,7 +129,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
 //Sending DOCUMENT
         } else if (update.hasMessage() && update.getMessage().hasDocument()) {
-
             String fileId = update.getMessage().getDocument().getFileId();
             long chatId = update.getMessage().getChatId();
             String caption = update.getMessage().getCaption();
@@ -175,13 +174,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 message.setText("GO!");
                 execute(message);
 
-                //задаем первый вопрос
+                //ask the first question
                 questionNumber = 1;
                 testStart(chatID, message, TestEnglishLevel.question1);
 
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
-                String text = "You have enough time to prepare!";
+                String text = "У тебя достаточно времени чтобы подготовиться!";
                 message.setChatId(chatID);
                 message.setMessageId(messageID);
                 message.setText(text);
@@ -250,10 +249,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void startCommandReceived(long chatId, String name) {
-        String answer = String.format("Hi, %s! Nice to meet you!\uD83D\uDC4B" +
-                "\nНажимай на кнопку Menu, чтобы узнать, что может бот." +
-                "\nПодпишись на бота, чтобы получать полезную информацию." +
-                "\nEnjoy your studies \uD83D\uDC9B\uD83D\uDC9A", name);
+        String answer = String.format(Constant.WELCOME_MSG, name);
         sendMessage(chatId, answer);
         log.info(String.format("Replied to user %d", chatId));
     }
@@ -410,8 +406,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * test English level knowledge method
-     *
-     * @param chatId
      */
 
     private void testEnglishLevelQuestion(long chatId) {
@@ -519,8 +513,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     /**
      * Method share to admin/owner all active subscribers
-     *
-     * @param chatId
      */
     private void getAllSubscribers(long chatId) {
 

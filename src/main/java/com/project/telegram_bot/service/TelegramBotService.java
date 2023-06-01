@@ -264,17 +264,17 @@ public class TelegramBotService extends TelegramLongPollingBot {
         Chat chat = message.getChat();
 
         if (user.isEmpty()) {
-            userRepository.save(User
-                    .builder()
-                    .chatID(chatId)
-                    .userName(chat.getUserName())
-                    .firstName(chat.getFirstName())
-                    .lastName(chat.getLastName())
-                    .subscribedAt(new Timestamp(System.currentTimeMillis()))
-                    .level(0)
-                    .isActive("YES")
-                    .build());
+            User userNew = new User();
 
+            userNew.setChatID(chatId);
+            userNew.setUserName(chat.getUserName());
+            userNew.setFirstName(chat.getFirstName());
+            userNew.setLastName(chat.getLastName());
+            userNew.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
+            userNew.setLevel(0);
+            userNew.setIsActive("YES");
+
+            userRepository.save(userNew);
             sendMessage(chatId, "Подписка успешно оформлена!");
             log.info("User subscribed: " + user);
         } else if (user.get().getIsActive().equals("NO")) {

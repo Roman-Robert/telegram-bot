@@ -549,12 +549,11 @@ public class TelegramBot extends TelegramLongPollingBot {
         Long chatId = message.getChatId();
         Optional<User> user = userRepository.findById(chatId);
 
-        if (user.isPresent()) {
+        if (user.isPresent() && user.get().getIsActive().equals("YES")) {
             if (user.get().getFreeLesson() == 0) {
                 String promoCode = "\nINF" + chatId.toString().substring(0, 4);
-
-                sendMessage(chatId, "Лови промокод на один бесплатной урок со школой Infinitive:\n" +
-                        promoCode + "\nУкажи его в чате https://wa.me/message/66F2CVQK7NLOK1 и выбирай удобное время");
+                sendMessage(chatId, "Лови промокод на один бесплатной урок со школой Infinitive:" +
+                        promoCode + "\nУкажи его в чате @Infinitiveonline и выбирай удобное время для занятия!");
                 user.get().setFreeLesson(1);
                 userRepository.save(user.get());
             } else {

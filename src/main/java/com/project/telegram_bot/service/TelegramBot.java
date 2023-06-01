@@ -256,7 +256,10 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     private void startCommandReceived(long chatId, String name) {
-        String answer = String.format("Hi, %s! Nice to meet you!\nПодпишись на бота, чтобы получать полезную информацию.", name);
+        String answer = String.format("Hi, %s! Nice to meet you!\uD83D\uDC4B" +
+                "\nПодпишись на бота, чтобы получать полезную информацию." +
+                "\nНажимай на кнопку Menu, чтобы узнать, что может бот.\n" +
+                "Enjoy your studies \uD83D\uDC9B\uD83D\uDC9A", name);
         sendMessage(chatId, answer);
         log.info(String.format("Replied to user %d", chatId));
     }

@@ -11,7 +11,6 @@ public class TestEnglishLevel {
 
 
     //Questions & answers
-    public static List<String> questionsList = new ArrayList<>();
     public static List<String> correctAnswersList = new ArrayList<>();
 
     public static List<String> question1 = new ArrayList<>();

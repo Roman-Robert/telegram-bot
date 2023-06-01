@@ -53,7 +53,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         this.config = config;
         this.userRepository = userRepository;
 
-        //Меню чат-бота
+        //Menu commands
         List<BotCommand> listOfCommands = new ArrayList<>();
 
         listOfCommands.add(new BotCommand("/start", "начать работу с ботом"));
@@ -264,17 +264,17 @@ public class TelegramBotService extends TelegramLongPollingBot {
         Chat chat = message.getChat();
 
         if (user.isEmpty()) {
-            User userNew = new User();
+            userRepository.save(User
+                    .builder()
+                    .chatID(chatId)
+                    .userName(chat.getUserName())
+                    .firstName(chat.getFirstName())
+                    .lastName(chat.getLastName())
+                    .subscribedAt(new Timestamp(System.currentTimeMillis()))
+                    .level(0)
+                    .isActive("YES")
+                    .build());
 
-            userNew.setChatID(chatId);
-            userNew.setUserName(chat.getUserName());
-            userNew.setFirstName(chat.getFirstName());
-            userNew.setLastName(chat.getLastName());
-            userNew.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
-            userNew.setLevel(0);
-            userNew.setIsActive("YES");
-
-            userRepository.save(userNew);
             sendMessage(chatId, "Подписка успешно оформлена!");
             log.info("User subscribed: " + user);
         } else if (user.get().getIsActive().equals("NO")) {
@@ -408,7 +408,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
 
-    //test English level knowledge
+    /**
+     * test English level knowledge method
+     *
+     * @param chatId
+     */
+
     private void testEnglishLevelQuestion(long chatId) {
         SendMessage message = new SendMessage();
         message.setChatId(chatId);
@@ -512,7 +517,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
     }
 
-    //метод отправляет всех подписчиков сообщением админу
+    /**
+     * Method share to admin/owner all active subscribers
+     *
+     * @param chatId
+     */
     private void getAllSubscribers(long chatId) {
 
         Iterable<User> users = userRepository.findAll();

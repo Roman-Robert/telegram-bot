@@ -507,19 +507,21 @@ public class TelegramBot extends TelegramLongPollingBot {
     //метод отправляет всех подписчиков сообщением админу
     private void getAllSubscribers(long chatId) {
 
-        List<User> users = userRepository.findUsersIsActiveYes();
+        Iterable<User> users = userRepository.findAll();
         StringBuilder subscribersList = new StringBuilder("Список подписчиков бота:\n");
         int i = 1;
 
         for (User user : users) {
-            subscribersList
-                    .append(i)
-                    .append(" - ")
-                    .append(user.getFirstName())
-                    .append(" ")
-                    .append(user.getLastName())
-                    .append("\n");
-            i++;
+            if (user.getIsActive().equals("YES")) {
+                subscribersList
+                        .append(i)
+                        .append(" - ")
+                        .append(user.getFirstName())
+                        .append(" ")
+                        .append(user.getLastName())
+                        .append("\n");
+                i++;
+            }
         }
 
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {

@@ -17,5 +17,6 @@ public class User {
     private String lastName;
     private Timestamp subscribedAt;
     private int level;
+    private String isActive;
 
 }

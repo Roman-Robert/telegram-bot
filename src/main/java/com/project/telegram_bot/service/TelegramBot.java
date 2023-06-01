@@ -267,23 +267,28 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void subscribeUser(Message message) {
-        if (userRepository.findById(message.getChatId()).isEmpty()) {
-            Long chatId = message.getChatId();
-            Chat chat = message.getChat();
+        Optional<User> user = userRepository.findById(message.getChatId());
+        Long chatId = message.getChatId();
+        Chat chat = message.getChat();
 
-            User user = new User();
+        if (user.isEmpty()) {
+            User userNew = new User();
 
-            user.setChatID(chatId);
-            user.setUserName(chat.getUserName());
-            user.setFirstName(chat.getFirstName());
-            user.setLastName(chat.getLastName());
-            user.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
-            user.setLevel(0);
-            user.setIsActive("YES");
+            userNew.setChatID(chatId);
+            userNew.setUserName(chat.getUserName());
+            userNew.setFirstName(chat.getFirstName());
+            userNew.setLastName(chat.getLastName());
+            userNew.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
+            userNew.setLevel(0);
+            userNew.setIsActive("YES");
 
-            userRepository.save(user);
+            userRepository.save(userNew);
             sendMessage(chatId, "Подписка успешно оформлена!");
             log.info("User subscribed: " + user);
+        } else if (user.get().getIsActive().equals("NO")) {
+            user.get().setIsActive("YES");
+            userRepository.save(user.get());
+            sendMessage(chatId, "Вы снова подписались!");
         } else {
             sendMessage(message.getChatId(), "Вы уже подписаны на бота \uD83D\uDC4D");
         }

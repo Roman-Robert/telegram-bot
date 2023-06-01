@@ -326,7 +326,9 @@ public class TelegramBot extends TelegramLongPollingBot {
             Iterable<User> users = userRepository.findAll();
 
             for (User user : users) {
-                sendMessage(user.getChatID(), textToSendForAll);
+                if (user.getIsActive().equals("YES")) {
+                    sendMessage(user.getChatID(), textToSendForAll);
+                }
             }
             log.info(String.format("%d sent message to all", chatId));
         } else {
@@ -355,7 +357,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
             Iterable<User> users = userRepository.findAll();
             for (User user : users) {
-                sendDocument(user.getChatID(), fileId, caption);
+                if (user.getIsActive().equals("YES")) {
+                    sendDocument(user.getChatID(), fileId, caption);
+                }
             }
             log.info(String.format("%d sent file to all", chatId));
         } else {
@@ -401,7 +405,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
             Iterable<User> users = userRepository.findAll();
             for (User user : users) {
-                sendPhoto(user.getChatID(), photoId, caption);
+                if (user.getIsActive().equals("YES")) {
+                    sendPhoto(user.getChatID(), photoId, caption);
+                }
             }
             log.info(String.format("%d sent photo to all subscribers", chatId));
         } else {
@@ -540,6 +546,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     }
 
     private void giveFreeLessonPromoCode(Message message) {
+        Long chatId = message.getChatId();
+        Optional<User> user = userRepository.findById(chatId);
+
+        if (user.isPresent()) {
+            if (user.get().getFreeLesson() == 0) {
+                String promoCode = "\nINF" + chatId.toString().substring(0, 4);
+
+                sendMessage(chatId, "Лови промокод на один бесплатной урок со школой Infinitive:\n" +
+                        promoCode + "\nУкажи его в чате https://wa.me/message/66F2CVQK7NLOK1 и выбирай удобное время");
+                user.get().setFreeLesson(1);
+                userRepository.save(user.get());
+            } else {
+                sendMessage(chatId, "Ты уже получал промокод на бонусный урок");
+            }
+        } else {
+            sendMessage(chatId, "Бонусный урок доступен только подписчикам бота");
+        }
 
     }
 }

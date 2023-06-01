@@ -67,6 +67,7 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/subscribe", "подписаться"));
         listOfCommands.add(new BotCommand("/unsubscribe", "отменить подписку"));
         listOfCommands.add(new BotCommand("/test", "пройти тест"));
+        listOfCommands.add(new BotCommand("/lesson", "получить бесплатный урок"));
         listOfCommands.add(new BotCommand("/info", "информация"));
         //Only owner and admin know about this functions
         //listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
@@ -112,6 +113,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     break;
                 case "/test":
                     testEnglishLevelQuestion(update.getMessage().getChatId());
+                    break;
+                case "/lesson":
+                    giveFreeLessonPromoCode(update.getMessage());
                     break;
                 case "/info":
                     sendMessage(chatId, INFO_MESSAGE);
@@ -250,7 +254,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             log.error("Empty message was received");
             throw new NullPointerException();
         }
-
     }
 
     private void startCommandReceived(long chatId, String name) {
@@ -292,7 +295,6 @@ public class TelegramBot extends TelegramLongPollingBot {
             sendMessage(message.getChatId(), "Вы не были подписаны на бота");
         }
     }
-
 
     private void sendMessage(long chatId, String textToSend) {
         SendMessage message = new SendMessage();
@@ -505,7 +507,7 @@ public class TelegramBot extends TelegramLongPollingBot {
     //метод отправляет всех подписчиков сообщением админу
     private void getAllSubscribers(long chatId) {
 
-        Iterable<User> users = userRepository.findAll();
+        List<User> users = userRepository.findUsersIsActiveYes();
         StringBuilder subscribersList = new StringBuilder("Список подписчиков бота:\n");
         int i = 1;
 
@@ -523,5 +525,9 @@ public class TelegramBot extends TelegramLongPollingBot {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
             sendMessage(chatId, subscribersList.toString().replace("null", ""));
         }
+    }
+
+    private void giveFreeLessonPromoCode(Message message) {
+
     }
 }

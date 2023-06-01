@@ -1,8 +1,10 @@
 package com.project.telegram_bot.service;
 
 import com.project.telegram_bot.config.BotConfig;
+import com.project.telegram_bot.constant.Constant;
 import com.project.telegram_bot.model.User;
 import com.project.telegram_bot.model.UserRepository;
+import com.project.telegram_bot.util.TestEnglishLevel;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
@@ -33,7 +35,7 @@ import java.util.Optional;
 
 @Slf4j
 @Component
-public class TelegramBot extends TelegramLongPollingBot {
+public class TelegramBotService extends TelegramLongPollingBot {
 
     @Autowired
     private final UserRepository userRepository;
@@ -46,18 +48,8 @@ public class TelegramBot extends TelegramLongPollingBot {
     int questionNumber = 0;
     List<String> personalResults = new ArrayList<>();
 
-    static final String INFO_MESSAGE = EmojiParser.parseToUnicode("Бот умеет делать много классных штук, " +
-            "типа проверить твои знания в коротком тесте, записать тебя на тестовое занятие, напомнить тебе о " +
-            "важных событиях и даже иногда присылать полезную инфу для изучения языка. " +
-            "Ну что, заходи, не пожалеешь!\n" +
-            "P.s. или пожалеешь, но это не точно.\n" +
-            "В любом случае, попробовать стоит.\n\n" +
-            "VK: https://vk.com/infinitive_online\n\n" +
-            "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" +
-            "Phone: +7(981)9347260\n\n" +
-            "Whats App: https://wa.me/message/66F2CVQK7NLOK1");
 
-    public TelegramBot(BotConfig config, UserRepository userRepository) {
+    public TelegramBotService(BotConfig config, UserRepository userRepository) {
         this.config = config;
         this.userRepository = userRepository;
 
@@ -71,8 +63,8 @@ public class TelegramBot extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/lesson", "получить бесплатный урок"));
         listOfCommands.add(new BotCommand("/info", "информация"));
         //Only owner and admin know about this functions
-        //listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
-        //listOfCommands.add(new BotCommand("/users", "получить список подписчиков бота"));
+        listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
+        listOfCommands.add(new BotCommand("/users", "получить список подписчиков бота"));
 
 
         try {
@@ -119,7 +111,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     giveFreeLessonPromoCode(update.getMessage());
                     break;
                 case "/info":
-                    sendMessage(chatId, INFO_MESSAGE);
+                    sendMessage(chatId, Constant.INFO_MESSAGE);
                     break;
                 case "/users":
                     getAllSubscribers(chatId);
@@ -363,7 +355,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
             log.info(String.format("%d sent file to all", chatId));
         } else {
-            sendMessage(chatId, "Упс! Только админ может отправлять сообщения " + "\uD83D\uDE0E");
+            sendMessage(chatId, Constant.ADMIN_ONLY);
         }
     }
 
@@ -411,7 +403,7 @@ public class TelegramBot extends TelegramLongPollingBot {
             }
             log.info(String.format("%d sent photo to all subscribers", chatId));
         } else {
-            sendMessage(chatId, "Упс! Только админ может отправлять сообщения " + "\uD83D\uDE0E");
+            sendMessage(chatId, Constant.ADMIN_ONLY);
         }
     }
 

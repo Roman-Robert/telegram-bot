@@ -1,4 +1,4 @@
-package com.project.telegram_bot.service;
+package com.project.telegram_bot.util;
 
 import java.util.ArrayList;
 import java.util.List;

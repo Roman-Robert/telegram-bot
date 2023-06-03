@@ -259,7 +259,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
         if (user==null) {
             UserDTO userNew = UserDTO.builder()
-                    .chatId(chatId)
+                    .id(chatId)
                     .userName(chat.getUserName())
                     .firstName(chat.getFirstName())
                     .lastName(chat.getLastName())
@@ -312,7 +312,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendMessage(user.getChatId(), textToSendForAll);
+                    sendMessage(user.getId(), textToSendForAll);
                 }
             }
             log.info(String.format("%d sent message to all", chatId));
@@ -343,7 +343,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             List<UserDTO> users = userService.getAll();
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendDocument(user.getChatId(), fileId, caption);
+                    sendDocument(user.getId(), fileId, caption);
                 }
             }
             log.info(String.format("%d sent file to all", chatId));
@@ -375,7 +375,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             List<UserDTO> users = userService.getAll();
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendPhoto(user.getChatId(), photoId, caption);
+                    sendPhoto(user.getId(), photoId, caption);
                 }
             }
             log.info(String.format("%d sent photo to all subscribers", chatId));
@@ -531,7 +531,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 user.setFreeLesson(1);
                 userService.saveUser(user);
             } else {
-                sendMessage(chatId, "Ты уже получал промокод на бонусный урок");
+                sendMessage(chatId, "Вы уже получали промокод на бонусный урок");
             }
         } else {
             sendMessage(chatId, "Бонусный урок доступен только подписчикам бота");

@@ -13,7 +13,7 @@ import java.sql.Timestamp;
 @AllArgsConstructor(access = AccessLevel.PUBLIC)
 @NoArgsConstructor(access = AccessLevel.PUBLIC)
 public class UserDTO {
-    private Long chatId;
+    private Long id;
     private String userName;
     private String firstName;
     private String lastName;

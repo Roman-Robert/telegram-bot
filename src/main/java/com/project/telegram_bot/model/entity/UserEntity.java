@@ -18,7 +18,7 @@ import java.sql.Timestamp;
 public class UserEntity {
 
     @Id
-    private Long chatId;
+    private Long id;
     private String userName;
     private String firstName;
     private String lastName;

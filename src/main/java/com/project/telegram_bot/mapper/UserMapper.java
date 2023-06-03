@@ -9,7 +9,7 @@ public class UserMapper {
 
     public UserDTO entityToDto(UserEntity userEntity) {
         return UserDTO.builder()
-                .chatId(userEntity.getChatId())
+                .id(userEntity.getId())
                 .userName(userEntity.getUserName())
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
@@ -22,7 +22,7 @@ public class UserMapper {
 
     public UserEntity dtoToEntity(UserDTO userDTO) {
         return UserEntity.builder()
-                .chatId(userDTO.getChatId())
+                .id(userDTO.getId())
                 .userName(userDTO.getUserName())
                 .firstName(userDTO.getFirstName())
                 .lastName(userDTO.getLastName())

@@ -36,7 +36,7 @@ public class UserService {
     }
 
     public UserDTO getUserById(long id) {
-        UserEntity user = userRepository.findUserByChatId(id);
+        UserEntity user = userRepository.findById(id);
         return userMapper.entityToDto(user);
     }
 

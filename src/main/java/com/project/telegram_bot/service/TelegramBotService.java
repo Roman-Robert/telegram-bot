@@ -253,13 +253,13 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void subscribeUser(Message message) {
-        UserDTO user = userService.getUserById(message.getChatId());
         Long chatId = message.getChatId();
         Chat chat = message.getChat();
+        UserDTO user = userService.getUserById(chatId);
 
         if (user==null) {
             UserDTO userNew = UserDTO.builder()
-                    .chatID(chatId)
+                    .chatId(chatId)
                     .userName(chat.getUserName())
                     .firstName(chat.getFirstName())
                     .lastName(chat.getLastName())
@@ -312,7 +312,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendMessage(user.getChatID(), textToSendForAll);
+                    sendMessage(user.getChatId(), textToSendForAll);
                 }
             }
             log.info(String.format("%d sent message to all", chatId));
@@ -343,7 +343,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             List<UserDTO> users = userService.getAll();
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendDocument(user.getChatID(), fileId, caption);
+                    sendDocument(user.getChatId(), fileId, caption);
                 }
             }
             log.info(String.format("%d sent file to all", chatId));
@@ -375,7 +375,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
             List<UserDTO> users = userService.getAll();
             for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
-                    sendPhoto(user.getChatID(), photoId, caption);
+                    sendPhoto(user.getChatId(), photoId, caption);
                 }
             }
             log.info(String.format("%d sent photo to all subscribers", chatId));

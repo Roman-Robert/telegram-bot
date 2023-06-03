@@ -2,12 +2,14 @@ package com.project.telegram_bot.mapper;
 
 import com.project.telegram_bot.model.dto.UserDTO;
 import com.project.telegram_bot.model.entity.UserEntity;
+import org.springframework.stereotype.Component;
 
+@Component
 public class UserMapper {
 
     public UserDTO entityToDto(UserEntity userEntity) {
         return UserDTO.builder()
-                .chatID(userEntity.getChatID())
+                .chatId(userEntity.getChatId())
                 .userName(userEntity.getUserName())
                 .firstName(userEntity.getFirstName())
                 .lastName(userEntity.getLastName())
@@ -20,7 +22,7 @@ public class UserMapper {
 
     public UserEntity dtoToEntity(UserDTO userDTO) {
         return UserEntity.builder()
-                .chatID(userDTO.getChatID())
+                .chatId(userDTO.getChatId())
                 .userName(userDTO.getUserName())
                 .firstName(userDTO.getFirstName())
                 .lastName(userDTO.getLastName())

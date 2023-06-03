@@ -1,5 +1,6 @@
-package com.project.telegram_bot.model;
+package com.project.telegram_bot.model.entity;
 
+import lombok.Builder;
 import lombok.Data;
 
 import javax.persistence.Entity;
@@ -8,7 +9,8 @@ import java.sql.Timestamp;
 
 @Entity(name = "usersDataTable")
 @Data
-public class User {
+@Builder
+public class UserEntity {
 
     @Id
     private Long chatID;

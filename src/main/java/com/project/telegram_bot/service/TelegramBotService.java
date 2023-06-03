@@ -2,8 +2,7 @@ package com.project.telegram_bot.service;
 
 import com.project.telegram_bot.config.BotConfig;
 import com.project.telegram_bot.constant.Constant;
-import com.project.telegram_bot.model.User;
-import com.project.telegram_bot.model.UserRepository;
+import com.project.telegram_bot.model.dto.UserDTO;
 import com.project.telegram_bot.util.TestEnglishLevel;
 import com.vdurmont.emoji.EmojiParser;
 import lombok.SneakyThrows;
@@ -31,14 +30,12 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.Optional;
 
 @Slf4j
 @Component
 public class TelegramBotService extends TelegramLongPollingBot {
 
-    @Autowired
-    private final UserRepository userRepository;
+    private final UserService userService;
     final BotConfig config;
     @Value("${owner_id}")
     private long OWNER_ID;
@@ -48,10 +45,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
     int questionNumber = 0;
     List<String> personalResults = new ArrayList<>();
 
-
-    public TelegramBotService(BotConfig config, UserRepository userRepository) {
+    @Autowired
+    public TelegramBotService(BotConfig config, UserService userService) {
         this.config = config;
-        this.userRepository = userRepository;
+        this.userService = userService;
+//        this.userRepository = userRepository;
 
         //Menu commands
         List<BotCommand> listOfCommands = new ArrayList<>();
@@ -255,27 +253,26 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void subscribeUser(Message message) {
-        Optional<User> user = userRepository.findById(message.getChatId());
+        UserDTO user = userService.getUserById(message.getChatId());
         Long chatId = message.getChatId();
         Chat chat = message.getChat();
 
-        if (user.isEmpty()) {
-            User userNew = new User();
-
-            userNew.setChatID(chatId);
-            userNew.setUserName(chat.getUserName());
-            userNew.setFirstName(chat.getFirstName());
-            userNew.setLastName(chat.getLastName());
-            userNew.setSubscribedAt(new Timestamp(System.currentTimeMillis()));
-            userNew.setLevel(0);
-            userNew.setIsActive("YES");
-
-            userRepository.save(userNew);
+        if (user==null) {
+            UserDTO userNew = UserDTO.builder()
+                    .chatID(chatId)
+                    .userName(chat.getUserName())
+                    .firstName(chat.getFirstName())
+                    .lastName(chat.getLastName())
+                    .subscribedAt(new Timestamp(System.currentTimeMillis()))
+                    .level(0)
+                    .isActive("YES")
+                    .build();
+            userService.saveUser(userNew);
             sendMessage(chatId, "Подписка успешно оформлена!");
-            log.info("User subscribed: " + user);
-        } else if (user.get().getIsActive().equals("NO")) {
-            user.get().setIsActive("YES");
-            userRepository.save(user.get());
+            log.info("User subscribed: " + userNew.toString());
+        } else if (user.getIsActive().equals("NO")) {
+            user.setIsActive("YES");
+            userService.saveUser(user);
             sendMessage(chatId, "Вы снова подписались!");
         } else {
             sendMessage(message.getChatId(), "Вы уже подписаны на бота \uD83D\uDC4D");
@@ -283,11 +280,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void unSubscribeUser(Message message) {
-        Optional<User> user = userRepository.findById(message.getChatId());
+        UserDTO user = userService.getUserById(message.getChatId());
 
-        if (user.isPresent() && user.get().getIsActive().equals("YES")) {
-            user.get().setIsActive("NO");
-            userRepository.save(user.get());
+        if (user!=null && user.getIsActive().equals("YES")) {
+            user.setIsActive("NO");
+            userService.saveUser(user);
             sendMessage(message.getChatId(), "Вы отписались от рассылки.");
         } else {
             sendMessage(message.getChatId(), "Вы не были подписаны на бота");
@@ -311,9 +308,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
 
             String textToSendForAll = EmojiParser.parseToUnicode(message.substring(message.indexOf(" ")));
-            Iterable<User> users = userRepository.findAll();
+            List<UserDTO> users = userService.getAll();
 
-            for (User user : users) {
+            for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
                     sendMessage(user.getChatID(), textToSendForAll);
                 }
@@ -343,8 +340,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void sendDocumentToAllSubscribers(long chatId, String fileId, String caption) {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
-            Iterable<User> users = userRepository.findAll();
-            for (User user : users) {
+            List<UserDTO> users = userService.getAll();
+            for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
                     sendDocument(user.getChatID(), fileId, caption);
                 }
@@ -373,26 +370,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
     }
 
-    private void sendPhotoByLink(long chatId, String url) {
-        InputFile inputFile = new InputFile(url);
-        SendPhoto sendPhoto = new SendPhoto();
-
-        sendPhoto.setChatId(chatId);
-        sendPhoto.setPhoto(inputFile);
-
-        try {
-            execute(sendPhoto);
-            log.info(chatId + " sent photo");
-        } catch (TelegramApiException e) {
-            log.error("Error in method .sendPhoto()" + e.getMessage());
-            throw new RuntimeException();
-        }
-    }
-
     private void sendPhotoToAllSubscribers(long chatId, String photoId, String caption) {
         if (chatId == OWNER_ID || chatId == ADMIN_ID) {
-            Iterable<User> users = userRepository.findAll();
-            for (User user : users) {
+            List<UserDTO> users = userService.getAll();
+            for (UserDTO user : users) {
                 if (user.getIsActive().equals("YES")) {
                     sendPhoto(user.getChatID(), photoId, caption);
                 }
@@ -516,11 +497,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
      */
     private void getAllSubscribers(long chatId) {
 
-        Iterable<User> users = userRepository.findAll();
+        List<UserDTO> users = userService.getAll();
         StringBuilder subscribersList = new StringBuilder("Список подписчиков бота:\n");
         int i = 1;
 
-        for (User user : users) {
+        for (UserDTO user : users) {
             if (user.getIsActive().equals("YES")) {
                 subscribersList
                         .append(i)
@@ -540,15 +521,15 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
     private void giveFreeLessonPromoCode(Message message) {
         Long chatId = message.getChatId();
-        Optional<User> user = userRepository.findById(chatId);
+        UserDTO user = userService.getUserById(chatId);
 
-        if (user.isPresent() && user.get().getIsActive().equals("YES")) {
-            if (user.get().getFreeLesson() == 0) {
+        if (user!=null && user.getIsActive().equals("YES")) {
+            if (user.getFreeLesson() == 0) {
                 String promoCode = "\nINF" + chatId.toString().substring(0, 4);
                 sendMessage(chatId, "Лови промокод на один бесплатной урок со школой Infinitive:" +
                         promoCode + "\nУкажи его в чате @Infinitiveonline и выбирай удобное время для занятия!");
-                user.get().setFreeLesson(1);
-                userRepository.save(user.get());
+                user.setFreeLesson(1);
+                userService.saveUser(user);
             } else {
                 sendMessage(chatId, "Ты уже получал промокод на бонусный урок");
             }

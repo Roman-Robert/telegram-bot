@@ -262,7 +262,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     .id(chatId)
                     .userName(chat.getUserName())
                     .firstName(chat.getFirstName())
-                    .lastName(chat.getFirstName())
+                    .lastName(chat.getLastName())
                     .subscribedAt(new Timestamp(System.currentTimeMillis()))
                     .level(0)
                     .isActive("YES")

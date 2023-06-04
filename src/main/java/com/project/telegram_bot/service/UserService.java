@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -36,12 +37,8 @@ public class UserService {
     }
 
     public UserDTO getUserById(long id) {
-        UserEntity user = userRepository.findById(id);
-        return userMapper.entityToDto(user);
+        Optional<UserEntity> user = userRepository.findById(id);
+        return user.map(userMapper::entityToDto).orElse(null);
     }
 
-    public void deleteUser(UserDTO user) {
-        user.setIsActive("NO");
-        userRepository.save(userMapper.dtoToEntity(user));
-    }
 }

@@ -114,7 +114,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 case "/users":
                     getAllSubscribers(chatId);
                 default:
-                    if (update.getMessage().getChatId() == OWNER_ID || update.getMessage().getChatId() == ADMIN_ID) {
+                    if (chatId == OWNER_ID || chatId == ADMIN_ID) {
                         log.info("Owner or admin sent something");
                     } else {
                         sendMessage(chatId, "Sorry, this command wasn't recognized \uD83E\uDEE4");
@@ -146,10 +146,10 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else if (update.hasCallbackQuery()) {
             String callBackData = update.getCallbackQuery().getData();
             int messageID = update.getCallbackQuery().getMessage().getMessageId();
-            long chatID = update.getCallbackQuery().getMessage().getChatId();
+            long chatId = update.getCallbackQuery().getMessage().getChatId();
 
             EditMessageText message = new EditMessageText();
-            message.setChatId(chatID);
+            message.setChatId(chatId);
             message.setMessageId(messageID);
 
             if (callBackData.equals(TestEnglishLevel.YES_BUTTON)) {
@@ -174,12 +174,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
 
                 //ask the first question
                 questionNumber = 1;
-                testStart(chatID, message, TestEnglishLevel.question1);
+                testStart(chatId, message, TestEnglishLevel.question1);
 
 
             } else if (callBackData.equals(TestEnglishLevel.NO_BUTTON)) {
                 String text = "У тебя достаточно времени чтобы подготовиться!";
-                message.setChatId(chatID);
+                message.setChatId(chatId);
                 message.setMessageId(messageID);
                 message.setText(text);
 
@@ -191,52 +191,52 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     case 1:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question2);
+                        testStart(chatId, message, TestEnglishLevel.question2);
                         break;
                     case 2:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question3);
+                        testStart(chatId, message, TestEnglishLevel.question3);
                         break;
                     case 3:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question4);
+                        testStart(chatId, message, TestEnglishLevel.question4);
                         break;
                     case 4:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question5);
+                        testStart(chatId, message, TestEnglishLevel.question5);
                         break;
                     case 5:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question6);
+                        testStart(chatId, message, TestEnglishLevel.question6);
                         break;
                     case 6:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question7);
+                        testStart(chatId, message, TestEnglishLevel.question7);
                         break;
                     case 7:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question8);
+                        testStart(chatId, message, TestEnglishLevel.question8);
                         break;
                     case 8:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question9);
+                        testStart(chatId, message, TestEnglishLevel.question9);
                         break;
                     case 9:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testStart(chatID, message, TestEnglishLevel.question10);
+                        testStart(chatId, message, TestEnglishLevel.question10);
                         break;
                     case 10:
                         personalResults.add(update.getCallbackQuery().getData());
                         questionNumber++;
-                        testEnd(chatID, messageID);
+                        testEnd(chatId, messageID);
                         break;
                 }
             }
@@ -252,7 +252,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         log.info(String.format("Replied to user %d", chatId));
     }
 
-    private void subscribeUser(Message message) {
+    private void subscribeUser(Message message) throws NullPointerException{
         Long chatId = message.getChatId();
         Chat chat = message.getChat();
         UserDTO user = userService.getUserById(chatId);
@@ -262,7 +262,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     .id(chatId)
                     .userName(chat.getUserName())
                     .firstName(chat.getFirstName())
-                    .lastName(chat.getLastName())
+                    .lastName(chat.getFirstName())
                     .subscribedAt(new Timestamp(System.currentTimeMillis()))
                     .level(0)
                     .isActive("YES")
@@ -492,9 +492,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
         }
     }
 
-    /**
-     * Method share to admin/owner all active subscribers
-     */
     private void getAllSubscribers(long chatId) {
 
         List<UserDTO> users = userService.getAll();

@@ -467,6 +467,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
             if (TestEnglishLevel.correctAnswersList.contains(str)) testResult++;
         }
 
+        personalResults.clear();
+
         String resultMessage = "Ты правильно ответил на " + testResult +
                 " из " + TestEnglishLevel.correctAnswersList.size() + " вопросов!\n\n";
 
@@ -478,7 +480,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
             resultMessage += Constant.SCORE_3;
         }
 
-        testResult = 0;
 
         EditMessageText message = new EditMessageText();
         message.setChatId(chatID);

@@ -9,6 +9,7 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Objects;
 
 @Slf4j
+@Service
 public class TelegramBotService extends TelegramLongPollingBot {
 
     private final UserService userService;
@@ -469,13 +471,11 @@ public class TelegramBotService extends TelegramLongPollingBot {
                 " из " + TestEnglishLevel.correctAnswersList.size() + " вопросов!\n\n";
 
         if (testResult < 4) {
-            resultMessage += "Нужно усерднее изучать английский язык.";
+            resultMessage += Constant.SCORE_1;
         } else if (testResult < 8) {
-            resultMessage += "У тебя есть базовые знания английского языка, " +
-                    "но требуется дополнительное обучение.";
+            resultMessage += Constant.SCORE_2;
         } else {
-            resultMessage += "Oтлично! У тебя хорошие знания английского языка, " +
-                    "но это не повод остонавливаться!";
+            resultMessage += Constant.SCORE_3;
         }
 
         EditMessageText message = new EditMessageText();

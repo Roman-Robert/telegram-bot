@@ -478,6 +478,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
             resultMessage += Constant.SCORE_3;
         }
 
+        testResult = 0;
+
         EditMessageText message = new EditMessageText();
         message.setChatId(chatID);
         message.setMessageId(messageID);

@@ -523,7 +523,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         if (user!=null && user.getIsActive().equals("YES")) {
             if (user.getFreeLesson() == 0) {
                 String promoCode = "\nINF" + chatId.toString().substring(0, 4);
-                sendMessage(chatId, "Лови промокод на один бесплатной урок со школой Infinitive:" +
+                sendMessage(chatId, "Лови промокод на один бесплатный урок со школой Infinitive:" +
                         promoCode + "\nУкажи его в чате @Infinitiveonline и выбирай удобное время для занятия!");
                 user.setFreeLesson(1);
                 userService.saveUser(user);
@@ -533,6 +533,5 @@ public class TelegramBotService extends TelegramLongPollingBot {
         } else {
             sendMessage(chatId, "Бонусный урок доступен только подписчикам бота");
         }
-
     }
 }

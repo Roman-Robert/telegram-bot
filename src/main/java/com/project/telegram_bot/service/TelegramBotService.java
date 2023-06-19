@@ -9,7 +9,6 @@ import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendDocument;
@@ -32,7 +31,6 @@ import java.util.List;
 import java.util.Objects;
 
 @Slf4j
-@Service
 public class TelegramBotService extends TelegramLongPollingBot {
 
     private final UserService userService;
@@ -41,7 +39,6 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private long OWNER_ID;
     @Value("${admin_id}")
     private long ADMIN_ID;
-    int testResult = 0;
     int questionNumber = 0;
     List<String> personalResults = new ArrayList<>();
 
@@ -462,6 +459,8 @@ public class TelegramBotService extends TelegramLongPollingBot {
     }
 
     private void testEnd(long chatID, int messageID) {
+        int testResult = 0;
+
         for (String str : personalResults) {
             if (TestEnglishLevel.correctAnswersList.contains(str)) testResult++;
         }

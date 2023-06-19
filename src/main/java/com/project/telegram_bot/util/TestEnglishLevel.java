@@ -86,7 +86,7 @@ public class TestEnglishLevel {
 
         question8.add("Вопрос 8" +
                 "\nЗакончи предложение:" +
-                "\nHow long is____?");
+                "\nHow long ____?");
         question8.add("are your parents married");
         question8.add("have your parents been married");
         question8.add("have your parents married");

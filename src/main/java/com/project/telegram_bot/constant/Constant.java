@@ -13,6 +13,7 @@ public class Constant {
             "VK: https://vk.com/infinitive_online\n\n" +
             "Instagram: instagram.com/infinitive_online_school?igshid=YmMyMTA2M2Y=\n\n" +
             "Phone: +7(981)9347260\n\n" +
+            "Telegram: @Infinitiveonline\n\n" +
             "Whats App: https://wa.me/message/66F2CVQK7NLOK1");
 
     public static String ADMIN_ONLY = "Упс! Только админ может отправлять сообщения";
@@ -22,14 +23,17 @@ public class Constant {
             "\nПодпишись на бота, чтобы получать полезную информацию." +
             "\nEnjoy your studies \uD83D\uDC9B\uD83D\uDC9A";
 
-    public static String SCORE_1 = "Скорее всего ваш опыт в изучении английского языка не очень большой, " +
-            "либо вы учились достаточно давно. " +
-            "Можем предположить, что ваш уровень False Beginner или Elementary. " +
-            "Для более точного определения, запишите на бесплатное тестирование с  методистом \uD83D\uDE09";
+    public static String SCORE_1 = "Скорее всего твой опыт в изучении английского языка не очень продолжительный, " +
+            "либо ты учился достаточно давно. Можем предположить, что твой уровень False Beginner или Elementary. " +
+            "Для более точного определения, запишись на бесплатное устное тестирование с методистом \uD83D\uDE09" +
+            "\n\uD83D\uDC49Для записи пиши нам @Infinitiveonline";
 
-    public static String SCORE_2 = "Совсем не плохо, скорее всего ваш уровень Elementary + или  Pre-intermediate. " +
-            "Хотите узнать точнее? Проходите устное тестирование с методистом\uD83D\uDC4C\n";
+    public static String SCORE_2 = "Совсем не плохо, скорее всего твой уровень Elementary + или Pre-intermediate. " +
+            "Хочешь узнать точнее? Проходи бесплатное устное тестирование с методистом\uD83D\uDC4C" +
+            "\n\uD83D\uDC49Для записи пиши нам @Infinitiveonline";
 
-    public static String SCORE_3 = "Весьма похвально! Ваши теоретические знания английского впечатляют. " +
-            "Готовы проверить себя в на устном тестировании с методистом?!";
+    public static String SCORE_3 = "Весьма похвально! Твои теоретические знания английского впечатляют. " +
+            "Мы готовы предположить, что твой уровень английского примерно Intermediate или выше. " +
+            "Готов проверить себя на бесплатном устном тестировании с методистом?!" +
+            "\n\uD83D\uDC49Для записи пиши нам @Infinitiveonline";
 }

@@ -58,6 +58,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         listOfCommands.add(new BotCommand("/unsubscribe", "отменить подписку"));
         listOfCommands.add(new BotCommand("/test", "пройти тест"));
         listOfCommands.add(new BotCommand("/lesson", "получить бесплатный урок"));
+        listOfCommands.add(new BotCommand("/webinar", "записаться на вебинар"));
         listOfCommands.add(new BotCommand("/info", "информация"));
         //Only owner and admin know about this functions
         //listOfCommands.add(new BotCommand("/send", "отправить сообщение всем подписчикам"));
@@ -106,6 +107,9 @@ public class TelegramBotService extends TelegramLongPollingBot {
                     break;
                 case "/lesson":
                     giveFreeLessonPromoCode(update.getMessage());
+                    break;
+                case "/webinar":
+                    sendMessage(chatId, Constant.WEBINAR);
                     break;
                 case "/info":
                     sendMessage(chatId, Constant.INFO_MESSAGE);
@@ -251,12 +255,12 @@ public class TelegramBotService extends TelegramLongPollingBot {
         log.info(String.format("Replied to user %d", chatId));
     }
 
-    private void subscribeUser(Message message) throws NullPointerException{
+    private void subscribeUser(Message message) throws NullPointerException {
         Long chatId = message.getChatId();
         Chat chat = message.getChat();
         UserDTO user = userService.getUserById(chatId);
 
-        if (user==null) {
+        if (user == null) {
             UserDTO userNew = UserDTO.builder()
                     .id(chatId)
                     .userName(chat.getUserName())
@@ -281,7 +285,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
     private void unSubscribeUser(Message message) {
         UserDTO user = userService.getUserById(message.getChatId());
 
-        if (user!=null && user.getIsActive().equals("YES")) {
+        if (user != null && user.getIsActive().equals("YES")) {
             user.setIsActive("NO");
             userService.saveUser(user);
             sendMessage(message.getChatId(), "Вы отписались от рассылки.");
@@ -522,7 +526,7 @@ public class TelegramBotService extends TelegramLongPollingBot {
         Long chatId = message.getChatId();
         UserDTO user = userService.getUserById(chatId);
 
-        if (user!=null && user.getIsActive().equals("YES")) {
+        if (user != null && user.getIsActive().equals("YES")) {
             if (user.getFreeLesson() == 0) {
                 String promoCode = "\nINF" + chatId.toString().substring(0, 4);
                 sendMessage(chatId, "Лови промокод на один бесплатный урок со школой Infinitive:" +
